@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\TravelRequestStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 
 class TravelRequest extends Model
 {
-    use HasUuids;
+    use HasUuids, SoftDeletes;
 
     public $incrementing = false;
     protected $keyType = 'string';
+
+    protected $casts = [
+        'status' => TravelRequestStatus::class,
+    ];
 
     protected $fillable = [
         'applicant_name',

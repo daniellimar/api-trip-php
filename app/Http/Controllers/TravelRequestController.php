@@ -57,8 +57,18 @@ class TravelRequestController extends Controller
 
     public function destroy(TravelRequest $travelRequest)
     {
+        if ($travelRequest->status->isApproved()) {
+            return response()->json([
+                'message' => 'Não é possível remover um pedido que já foi aprovado.'
+            ], 403);
+        }
+
         $travelRequest->delete();
 
-        return response()->noContent();
+        return response()->json([
+            'id' => $travelRequest->id,
+            'deleted' => true,
+            'message' => 'Solicitação de viagem removida com sucesso.'
+        ], 200);
     }
 }

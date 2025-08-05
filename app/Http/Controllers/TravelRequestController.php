@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreTravelRequest;
-use App\Http\Requests\UpdateTravelRequest;
 use App\Models\TravelRequest;
+use App\Enums\TravelRequestStatus;
 use App\Http\Resources\TravelRequestResource;
-use Illuminate\Http\Request;
+use Illuminate\Http\{Request, JsonResponse};
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use App\Http\Requests\{StoreTravelRequest, UpdateTravelRequest};
 
 class TravelRequestController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): AnonymousResourceCollection
     {
         $query = TravelRequest::query();
 
@@ -32,7 +33,7 @@ class TravelRequestController extends Controller
         return TravelRequestResource::collection($travelRequests);
     }
 
-    public function store(StoreTravelRequest $request)
+    public function store(StoreTravelRequest $request): TravelRequestResource
     {
         $validated = $request->validated();
 
@@ -41,7 +42,7 @@ class TravelRequestController extends Controller
         return new TravelRequestResource($travelRequest);
     }
 
-    public function show(TravelRequest $travelRequest)
+    public function show(TravelRequest $travelRequest): TravelRequestResource
     {
         return new TravelRequestResource($travelRequest);
     }
@@ -50,12 +51,24 @@ class TravelRequestController extends Controller
     {
         $validated = $request->validated();
 
-        $travelRequest->update($validated);
+        if (isset($validated['status']) && $validated['status'] === 'cancelado') {
+            return $this->cancel($travelRequest);
+        }
 
-        return new TravelRequestResource($travelRequest);
+        if ($travelRequest->update($validated)) {
+            return response()->json([
+                'id' => $travelRequest->id,
+                'status' => $travelRequest->status,
+                'message' => 'Solicitação de viagem atualizada com sucesso.'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Erro ao atualizar a solicitação de viagem.'
+        ], 500);
     }
 
-    public function destroy(TravelRequest $travelRequest)
+    public function destroy(TravelRequest $travelRequest): JsonResponse
     {
         if ($travelRequest->status->isApproved()) {
             return response()->json([
@@ -69,6 +82,23 @@ class TravelRequestController extends Controller
             'id' => $travelRequest->id,
             'deleted' => true,
             'message' => 'Solicitação de viagem removida com sucesso.'
-        ], 200);
+        ]);
+    }
+
+    public function cancel(TravelRequest $travelRequest): JsonResponse
+    {
+        if ($travelRequest->status === TravelRequestStatus::APROVADO) {
+            return response()->json([
+                'message' => 'Não é possível cancelar um pedido que já foi aprovado.'
+            ], 403);
+        }
+
+        $travelRequest->update(['status' => TravelRequestStatus::CANCELADO]);
+
+        return response()->json([
+            'id' => $travelRequest->id,
+            'status' => TravelRequestStatus::CANCELADO,
+            'message' => 'Solicitação de viagem cancelada com sucesso.'
+        ]);
     }
 }

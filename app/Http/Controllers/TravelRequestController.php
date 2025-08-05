@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TravelRequest;
 use App\Enums\TravelRequestStatus;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\TravelRequestResource;
 use Illuminate\Http\{Request, JsonResponse};
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -51,8 +52,22 @@ class TravelRequestController extends Controller
     {
         $validated = $request->validated();
 
-        if (isset($validated['status']) && $validated['status'] === 'cancelado') {
-            return $this->cancel($travelRequest);
+        if (isset($validated['status'])) {
+            if (!Auth::user()->hasRole('admin')) {
+                return response()->json([
+                    'message' => 'Você não tem permissão para alterar o status da solicitação.'
+                ], 403);
+            }
+
+            if ($validated['status'] === 'cancelado') {
+                return $this->cancel($travelRequest);
+            }
+
+            if (!in_array($validated['status'], ['aprovado', 'cancelado'])) {
+                return response()->json([
+                    'message' => 'Status inválido. Use "aprovado" ou "cancelado".'
+                ], 422);
+            }
         }
 
         if ($travelRequest->update($validated)) {

@@ -12,9 +12,22 @@ use App\Http\Requests\{StoreTravelRequest, UpdateTravelRequest};
 
 class TravelRequestController extends Controller
 {
+    private $user;
+    private $isAdmin;
+
+    public function __construct()
+    {
+        $this->user = auth()->user();
+        $this->isAdmin = $this->user?->hasRole('admin');
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = TravelRequest::query();
+
+        if (!$this->isAdmin) {
+            $query->where('user_id', $this->user->id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -29,22 +42,21 @@ class TravelRequestController extends Controller
             $query->whereDate('end_date', '<=', $request->end_range);
         }
 
-        $travelRequests = $query->get();
-
-        return TravelRequestResource::collection($travelRequests);
+        return TravelRequestResource::collection($query->get());
     }
 
-    public function store(StoreTravelRequest $request): TravelRequestResource
+    public function store(StoreTravelRequest $request)
     {
         $validated = $request->validated();
-
-        $travelRequest = TravelRequest::create($validated);
+        $travelRequest = $this->user->travelRequests()->create($validated);
 
         return new TravelRequestResource($travelRequest);
     }
 
     public function show(TravelRequest $travelRequest): TravelRequestResource
     {
+        $this->authorizeUserAccess($travelRequest);
+
         return new TravelRequestResource($travelRequest);
     }
 
@@ -53,7 +65,7 @@ class TravelRequestController extends Controller
         $validated = $request->validated();
 
         if (isset($validated['status'])) {
-            if (!Auth::user()->hasRole('admin')) {
+            if (!$this->isAdmin) {
                 return response()->json([
                     'message' => 'Você não tem permissão para alterar o status da solicitação.'
                 ], 403);
@@ -70,6 +82,8 @@ class TravelRequestController extends Controller
             }
         }
 
+        $this->authorizeUserAccess($travelRequest);
+
         if ($travelRequest->update($validated)) {
             return response()->json([
                 'id' => $travelRequest->id,
@@ -85,6 +99,8 @@ class TravelRequestController extends Controller
 
     public function destroy(TravelRequest $travelRequest): JsonResponse
     {
+        $this->authorizeUserAccess($travelRequest);
+
         if ($travelRequest->status->isApproved()) {
             return response()->json([
                 'message' => 'Não é possível remover um pedido que já foi aprovado.'
@@ -102,6 +118,8 @@ class TravelRequestController extends Controller
 
     public function cancel(TravelRequest $travelRequest): JsonResponse
     {
+        $this->authorizeUserAccess($travelRequest);
+
         if ($travelRequest->status === TravelRequestStatus::APROVADO) {
             return response()->json([
                 'message' => 'Não é possível cancelar um pedido que já foi aprovado.'
@@ -115,5 +133,15 @@ class TravelRequestController extends Controller
             'status' => TravelRequestStatus::CANCELADO,
             'message' => 'Solicitação de viagem cancelada com sucesso.'
         ]);
+    }
+
+    /**
+     * Verifica se o usuário autenticado pode manipular a solicitação.
+     */
+    private function authorizeUserAccess(TravelRequest $travelRequest): void
+    {
+        if (!$this->isAdmin && $travelRequest->user_id !== $this->user->id) {
+            abort(403, 'Você não tem permissão para acessar esta solicitação.');
+        }
     }
 }

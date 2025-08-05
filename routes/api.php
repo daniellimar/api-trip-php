@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TravelRequestController;
 
-Route::get('/teste', function () {
-    return response()->json(['mensagem' => 'API ativa']);
-});
+Route::apiResource('travel-requests', TravelRequestController::class);

@@ -9,14 +9,14 @@ services:
             DB_CONNECTION: pgsql
             DB_HOST: db
             DB_PORT: 5432
-            DB_DATABASE: api-places
+            DB_DATABASE: api_travel_php
             DB_USERNAME: root
             DB_PASSWORD: mysecretpassword
 
     db:
         image: postgres:15
         environment:
-            POSTGRES_DB: api-places
+            POSTGRES_DB: api_travel_php
             POSTGRES_USER: root
             POSTGRES_PASSWORD: mysecretpassword
         ports:

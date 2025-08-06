@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TravelRequest;
 use App\Enums\TravelRequestStatus;
+use App\Notifications\TravelRequestStatusChanged;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\TravelRequestResource;
 use Illuminate\Http\{Request, JsonResponse};
@@ -43,7 +44,8 @@ class TravelRequestController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('applicant_name', 'LIKE', "%{$search}%")
-                    ->orWhere('destination', 'LIKE', "%{$search}%");
+                    ->orWhere('destination', 'LIKE', "%{$search}%")
+                    ->orWhere('id', 'LIKE', "%{$search}%");
             });
         }
 
@@ -94,6 +96,12 @@ class TravelRequestController extends Controller
         $this->authorizeUserAccess($travelRequest);
 
         if ($travelRequest->update($validated)) {
+            if (isset($validated['status']) && in_array($validated['status'], ['aprovado', 'cancelado'])) {
+                $travelRequest->user->notify(
+                    new TravelRequestStatusChanged($validated['status'], $travelRequest)
+                );
+            }
+
             return response()->json([
                 'id' => $travelRequest->id,
                 'status' => $travelRequest->status,
@@ -136,6 +144,10 @@ class TravelRequestController extends Controller
         }
 
         $travelRequest->update(['status' => TravelRequestStatus::CANCELADO]);
+
+        $travelRequest->user->notify(
+            new TravelRequestStatusChanged('cancelado', $travelRequest)
+        );
 
         return response()->json([
             'id' => $travelRequest->id,

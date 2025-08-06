@@ -4,7 +4,8 @@ services:
         ports:
             - "8080:8000"
         depends_on:
-            - db
+            db:
+                condition: service_healthy
         environment:
             DB_CONNECTION: pgsql
             DB_HOST: db
@@ -23,6 +24,11 @@ services:
             - "5432:5432"
         volumes:
             - pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test: [ "CMD", "pg_isready", "-U", "root" ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
 volumes:
     pgdata:

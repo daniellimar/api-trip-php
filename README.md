@@ -11,7 +11,7 @@
 ```bash
 git clone https://github.com/daniellimar/api-trip-php.git
 cd api-trip-php
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Serviço disponível na Porta: 8080

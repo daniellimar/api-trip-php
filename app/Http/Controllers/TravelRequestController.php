@@ -41,13 +41,24 @@ class TravelRequestController extends Controller
         if ($request->filled('end_range')) {
             $query->whereDate('end_date', '<=', $request->end_range);
         }
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('applicant_name', 'LIKE', "%{$search}%")
+                    ->orWhere('destination', 'LIKE', "%{$search}%");
+            });
+        }
 
-        return TravelRequestResource::collection($query->get());
+        $perPage = $request->input('per_page', 10);
+
+        return TravelRequestResource::collection($query->paginate($perPage));
     }
 
     public function store(StoreTravelRequest $request)
     {
         $validated = $request->validated();
+
+        $validated['status'] = TravelRequestStatus::SOLICITADO;
         $travelRequest = $this->user->travelRequests()->create($validated);
 
         return new TravelRequestResource($travelRequest);

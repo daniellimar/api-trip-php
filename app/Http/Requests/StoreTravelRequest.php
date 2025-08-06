@@ -18,7 +18,6 @@ class StoreTravelRequest extends FormRequest
             'destination' => 'required|string|max:255',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'required|in:solicitado,aprovado,cancelado',
             'applicant_name' => [
                 'required',
                 Rule::unique('travel_requests')

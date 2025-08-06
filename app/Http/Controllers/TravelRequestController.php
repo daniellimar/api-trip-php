@@ -11,6 +11,17 @@ use Illuminate\Http\{Request, JsonResponse};
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Http\Requests\{StoreTravelRequest, UpdateTravelRequest};
 
+/**
+ * @OA\Info(
+ *     version="1.0.0",
+ *     title="TravelRequest API"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Travel Requests",
+ *     description="API para gerenciar solicitações de viagem"
+ * )
+ */
 class TravelRequestController extends Controller
 {
     private $user;
@@ -22,6 +33,61 @@ class TravelRequestController extends Controller
         $this->isAdmin = $this->user?->hasRole('admin');
     }
 
+    /**
+     * Listar todas as solicitações de viagem.
+     *
+     * @OA\Get(
+     *     path="/api/travel-requests",
+     *     summary="Listar todas as solicitações de viagem",
+     *     tags={"Travel Requests"},
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filtrar por status da solicitação",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="destination",
+     *         in="query",
+     *         description="Filtrar por destino",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="start_range",
+     *         in="query",
+     *         description="Data inicial para filtro",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date")
+     *     ),
+     *     @OA\Parameter(
+     *         name="end_range",
+     *         in="query",
+     *         description="Data final para filtro",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date")
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Termo de busca (nome do requerente, destino ou ID)",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Quantidade de itens por página (default 10)",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Lista de solicitações de viagem retornada com sucesso",
+     *     )
+     * )
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = TravelRequest::query();
@@ -29,7 +95,6 @@ class TravelRequestController extends Controller
         if (!$this->isAdmin) {
             $query->where('user_id', $this->user->id);
         }
-
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -54,16 +119,64 @@ class TravelRequestController extends Controller
         return TravelRequestResource::collection($query->paginate($perPage));
     }
 
+    /**
+     * Criar uma nova solicitação de viagem.
+     *
+     * @OA\Post(
+     *     path="/api/travel-requests",
+     *     summary="Criar uma nova solicitação de viagem",
+     *     tags={"Travel Requests"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Solicitação criada com sucesso",
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validação falhou"
+     *     )
+     * )
+     */
     public function store(StoreTravelRequest $request)
     {
         $validated = $request->validated();
-
         $validated['status'] = TravelRequestStatus::SOLICITADO;
+
         $travelRequest = $this->user->travelRequests()->create($validated);
 
         return new TravelRequestResource($travelRequest);
     }
 
+    /**
+     * Exibir solicitação específica.
+     *
+     * @OA\Get(
+     *     path="/api/travel-requests/{travelRequest}",
+     *     summary="Exibir os detalhes de uma solicitação de viagem",
+     *     tags={"Travel Requests"},
+     *     @OA\Parameter(
+     *         name="travelRequest",
+     *         in="path",
+     *         description="ID da solicitação de viagem",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Solicitação retornada com sucesso",
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Não autorizado"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Solicitação não encontrada"
+     *     )
+     * )
+     */
     public function show(TravelRequest $travelRequest): TravelRequestResource
     {
         $this->authorizeUserAccess($travelRequest);
@@ -71,6 +184,41 @@ class TravelRequestController extends Controller
         return new TravelRequestResource($travelRequest);
     }
 
+    /**
+     * Atualizar solicitação de viagem.
+     *
+     * @OA\Put(
+     *     path="/api/travel-requests/{travelRequest}",
+     *     summary="Atualizar uma solicitação de viagem",
+     *     tags={"Travel Requests"},
+     *     @OA\Parameter(
+     *         name="travelRequest",
+     *         in="path",
+     *         description="ID da solicitação",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Solicitação atualizada com sucesso",
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Não autorizado para mudar status"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Status inválido"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Erro no servidor"
+     *     )
+     * )
+     */
     public function update(UpdateTravelRequest $request, TravelRequest $travelRequest)
     {
         $validated = $request->validated();
@@ -81,11 +229,9 @@ class TravelRequestController extends Controller
                     'message' => 'Você não tem permissão para alterar o status da solicitação.'
                 ], 403);
             }
-
             if ($validated['status'] === 'cancelado') {
                 return $this->cancel($travelRequest);
             }
-
             if (!in_array($validated['status'], ['aprovado', 'cancelado'])) {
                 return response()->json([
                     'message' => 'Status inválido. Use "aprovado" ou "cancelado".'
@@ -101,7 +247,6 @@ class TravelRequestController extends Controller
                     new TravelRequestStatusChanged($validated['status'], $travelRequest)
                 );
             }
-
             return response()->json([
                 'id' => $travelRequest->id,
                 'status' => $travelRequest->status,
@@ -114,6 +259,30 @@ class TravelRequestController extends Controller
         ], 500);
     }
 
+    /**
+     * Remover solicitação de viagem.
+     *
+     * @OA\Delete(
+     *     path="/api/travel-requests/{travelRequest}",
+     *     summary="Remover uma solicitação de viagem",
+     *     tags={"Travel Requests"},
+     *     @OA\Parameter(
+     *         name="travelRequest",
+     *         in="path",
+     *         description="ID da solicitação",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Solicitação removida com sucesso",
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Não é possível remover solicitação aprovada"
+     *     )
+     * )
+     */
     public function destroy(TravelRequest $travelRequest): JsonResponse
     {
         $this->authorizeUserAccess($travelRequest);
@@ -133,6 +302,30 @@ class TravelRequestController extends Controller
         ]);
     }
 
+    /**
+     * Cancelar uma solicitação de viagem.
+     *
+     * @OA\Post(
+     *     path="/api/travel-requests/{travelRequest}/cancel",
+     *     summary="Cancelar uma solicitação de viagem",
+     *     tags={"Travel Requests"},
+     *     @OA\Parameter(
+     *         name="travelRequest",
+     *         in="path",
+     *         description="ID da solicitação a ser cancelada",
+     *         required=true,
+     *         @OA\Schema(type="string", format="uuid")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Solicitação cancelada com sucesso",
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Não é possível cancelar solicitação aprovada"
+     *     )
+     * )
+     */
     public function cancel(TravelRequest $travelRequest): JsonResponse
     {
         $this->authorizeUserAccess($travelRequest);

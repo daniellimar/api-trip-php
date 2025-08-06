@@ -1,0 +1,236 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "TravelRequest API",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/travel-requests": {
+            "get": {
+                "tags": [
+                    "Travel Requests"
+                ],
+                "summary": "Listar todas as solicitações de viagem",
+                "description": "Listar todas as solicitações de viagem.",
+                "operationId": "7a72e8faefec775126f85d62cd5185b7",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrar por status da solicitação",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "destination",
+                        "in": "query",
+                        "description": "Filtrar por destino",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_range",
+                        "in": "query",
+                        "description": "Data inicial para filtro",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_range",
+                        "in": "query",
+                        "description": "Data final para filtro",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Termo de busca (nome do requerente, destino ou ID)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Quantidade de itens por página (default 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de solicitações de viagem retornada com sucesso"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Travel Requests"
+                ],
+                "summary": "Criar uma nova solicitação de viagem",
+                "description": "Criar uma nova solicitação de viagem.",
+                "operationId": "b9e9a9a8dc126fa0dfbf370c74e4661d",
+                "requestBody": {
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Solicitação criada com sucesso"
+                    },
+                    "422": {
+                        "description": "Validação falhou"
+                    }
+                }
+            }
+        },
+        "/api/travel-requests/{travelRequest}": {
+            "get": {
+                "tags": [
+                    "Travel Requests"
+                ],
+                "summary": "Exibir os detalhes de uma solicitação de viagem",
+                "description": "Exibir solicitação específica.",
+                "operationId": "cd9977f886275366b6c7bc2204549cc9",
+                "parameters": [
+                    {
+                        "name": "travelRequest",
+                        "in": "path",
+                        "description": "ID da solicitação de viagem",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitação retornada com sucesso"
+                    },
+                    "403": {
+                        "description": "Não autorizado"
+                    },
+                    "404": {
+                        "description": "Solicitação não encontrada"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Travel Requests"
+                ],
+                "summary": "Atualizar uma solicitação de viagem",
+                "description": "Atualizar solicitação de viagem.",
+                "operationId": "329101225ead89ad88324e5a84d94e82",
+                "parameters": [
+                    {
+                        "name": "travelRequest",
+                        "in": "path",
+                        "description": "ID da solicitação",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Solicitação atualizada com sucesso"
+                    },
+                    "403": {
+                        "description": "Não autorizado para mudar status"
+                    },
+                    "422": {
+                        "description": "Status inválido"
+                    },
+                    "500": {
+                        "description": "Erro no servidor"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Travel Requests"
+                ],
+                "summary": "Remover uma solicitação de viagem",
+                "description": "Remover solicitação de viagem.",
+                "operationId": "9a9a21c235738af209e34a1ee0055b77",
+                "parameters": [
+                    {
+                        "name": "travelRequest",
+                        "in": "path",
+                        "description": "ID da solicitação",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitação removida com sucesso"
+                    },
+                    "403": {
+                        "description": "Não é possível remover solicitação aprovada"
+                    }
+                }
+            }
+        },
+        "/api/travel-requests/{travelRequest}/cancel": {
+            "post": {
+                "tags": [
+                    "Travel Requests"
+                ],
+                "summary": "Cancelar uma solicitação de viagem",
+                "description": "Cancelar uma solicitação de viagem.",
+                "operationId": "bfa7af4532b900b05839f0cb0a994693",
+                "parameters": [
+                    {
+                        "name": "travelRequest",
+                        "in": "path",
+                        "description": "ID da solicitação a ser cancelada",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitação cancelada com sucesso"
+                    },
+                    "403": {
+                        "description": "Não é possível cancelar solicitação aprovada"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Travel Requests",
+            "description": "API para gerenciar solicitações de viagem"
+        }
+    ]
+}

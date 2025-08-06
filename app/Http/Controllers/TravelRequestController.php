@@ -35,10 +35,8 @@ class TravelRequestController extends Controller
         if ($request->filled('destination')) {
             $query->where('destination', $request->destination);
         }
-        if ($request->filled('start_range')) {
+        if ($request->filled('start_range') && $request->filled('end_range')) {
             $query->whereDate('start_date', '>=', $request->start_range);
-        }
-        if ($request->filled('end_range')) {
             $query->whereDate('end_date', '<=', $request->end_range);
         }
         if ($request->filled('search')) {

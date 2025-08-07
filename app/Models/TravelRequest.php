@@ -4,11 +4,11 @@ namespace App\Models;
 
 use App\Enums\TravelRequestStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\{Model, SoftDeletes};
+use Illuminate\Database\Eloquent\{Factories\HasFactory, Model, SoftDeletes};
 
 class TravelRequest extends Model
 {
-    use HasUuids, SoftDeletes;
+    use HasUuids, SoftDeletes, HasFactory;
 
     public $incrementing = false;
     protected $keyType = 'string';

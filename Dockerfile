@@ -24,6 +24,8 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 RUN php artisan key:generate \
  && php artisan jwt:secret --force || true
 
+RUN cp .env .env.testing
+
 RUN mkdir -p storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
